@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from django.urls import reverse
+from django.shortcuts import render, redirect
 from .models import OrderItem
 from .forms import OrderCreateForm
 from cart.cart import Cart
@@ -19,10 +20,15 @@ def order_create(request):
                                          quantity=item['quantity'])
             #Очищаем корзину
             cart.clear()
+            #Запускаем асинхронную задачу
             order_created.delay(order.id)
-            return render(request,
+            #Сохраняем заказ в сессии
+            request.session['order_id'] = order.id
+            #Редирект на страницу оплаты
+            return redirect(reverse('payment:process'))
+            """return render(request,
                           'orders/order/created.html',
-                          {'order': order})
+                          {'order': order})"""
     else:
         form = OrderCreateForm()
     return render(request,
